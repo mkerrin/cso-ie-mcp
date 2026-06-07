@@ -1,0 +1,10 @@
+[project]
+name = "cso-ie-mcp"
+version = "0.1.0"
+description = "Simple MCP server for data.cso.ie"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "httpx>=0.28.1",
+    "mcp[cli]>=1.27.2",
+]
