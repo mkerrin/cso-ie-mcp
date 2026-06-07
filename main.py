@@ -8,11 +8,19 @@ Docs: https://github.com/CSOIreland/PxStat/wiki/API-Cube-RESTful
 
 from __future__ import annotations
 
+import os
+
 from mcp.server.fastmcp import FastMCP
 
 from cso import DEFAULT_LANGUAGE, CSOClient
 
-mcp = FastMCP("cso-ireland")
+# Host/port only matter under the HTTP transport, but FastMCP takes them at
+# construction time, so configure them here from the environment.
+mcp = FastMCP(
+    "cso-ireland",
+    host=os.environ.get("MCP_HOST", "127.0.0.1"),
+    port=int(os.environ.get("MCP_PORT", "8000")),
+)
 client = CSOClient()
 
 
@@ -145,8 +153,17 @@ async def get_dataset(
 
 
 def main() -> None:
+    """Entry point. Defaults to stdio; set MCP_TRANSPORT=http for streamable HTTP.
+
+    HTTP bind address is controlled by MCP_HOST / MCP_PORT (see FastMCP
+    construction above).
+    """
+    transport = os.environ.get("MCP_TRANSPORT", "stdio")
     try:
-        mcp.run()
+        if transport == "http":
+            mcp.run(transport="streamable-http")
+        else:
+            mcp.run()
     finally:
         import anyio
 

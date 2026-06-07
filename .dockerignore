@@ -1,0 +1,19 @@
+# Keep the build context small and the image clean. uv recreates the venv and
+# bytecode inside the image, and the scratch outputs / notes are never needed.
+.venv/
+__pycache__/
+*.py[oc]
+*.egg-info/
+build/
+dist/
+wheels/
+
+.git/
+.gitignore
+
+# Editor / agent / OS cruft
+.claude/
+*.org
+notes.org
+.DS_Store
+*.swp

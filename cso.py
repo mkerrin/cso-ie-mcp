@@ -10,6 +10,7 @@ records. Everything else (metadata, data) is fetched on demand per matrix.
 from __future__ import annotations
 
 import logging
+import os
 import time
 from dataclasses import dataclass
 
@@ -21,7 +22,9 @@ DEFAULT_LANGUAGE = "en"
 # The full collection rarely changes within a session; cache it for a while.
 _COLLECTION_TTL_SECONDS = 6 * 60 * 60
 
-LOG_FILE = "/tmp/cso.log"
+# Where per-request logs go. Override with CSO_LOG_FILE; the Docker image points
+# it at /dev/stderr so `docker logs` shows requests (stdout is the MCP wire).
+LOG_FILE = os.environ.get("CSO_LOG_FILE", "/tmp/cso.log")
 
 
 def _build_logger() -> logging.Logger:

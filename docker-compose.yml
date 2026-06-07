@@ -1,0 +1,17 @@
+# Convenience wrapper: `docker compose up --build` builds the image and serves
+# the cso-ireland MCP server over streamable HTTP at http://127.0.0.1:8001/mcp.
+# Host port is 8001 (not 8000) so this can run alongside data-gov-ie, which uses
+# 8000; the container still listens on 8000 internally.
+services:
+  cso-ireland:
+    build: .
+    image: cso-ie-mcp
+    ports:
+      - "8001:8000"
+    environment:
+      # Transport/bind are baked into the image; override here if needed.
+      MCP_TRANSPORT: http
+      MCP_HOST: 0.0.0.0
+      MCP_PORT: "8000"
+      CSO_LOG_FILE: /dev/stderr
+    restart: unless-stopped
