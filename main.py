@@ -8,23 +8,43 @@ Docs: https://github.com/CSOIreland/PxStat/wiki/API-Cube-RESTful
 
 from __future__ import annotations
 
+import functools
 import os
 
-from mcp.server.fastmcp import FastMCP
+import httpx
+from mcp.server.mcpserver import MCPServer
+from mcp.server.mcpserver.exceptions import ToolError
 
 from cso import DEFAULT_LANGUAGE, CSOClient
 
-# Host/port only matter under the HTTP transport, but FastMCP takes them at
-# construction time, so configure them here from the environment.
-mcp = FastMCP(
-    "cso-ireland",
-    host=os.environ.get("MCP_HOST", "127.0.0.1"),
-    port=int(os.environ.get("MCP_PORT", "8000")),
-)
+mcp = MCPServer("cso-ireland")
 client = CSOClient()
 
 
+def _upstream_errors(fn):
+    """Report CSO API failures to the model as a ToolError.
+
+    mcp 2.x hides the message of any exception other than ToolError ("Error
+    executing tool <name>"), so an unknown matrix code (404) or a CSO outage
+    would otherwise reach the model with no detail.
+    """
+
+    @functools.wraps(fn)
+    async def wrapper(*args, **kwargs):
+        try:
+            return await fn(*args, **kwargs)
+        except httpx.HTTPStatusError as exc:
+            raise ToolError(
+                f"CSO API returned {exc.response.status_code} for {exc.request.url}"
+            ) from exc
+        except httpx.HTTPError as exc:
+            raise ToolError(f"CSO API request failed: {exc!r}") from exc
+
+    return wrapper
+
+
 @mcp.tool()
+@_upstream_errors
 async def list_datasets(limit: int = 50, offset: int = 0) -> dict:
     """List CSO Ireland statistical datasets.
 
@@ -51,6 +71,7 @@ async def list_datasets(limit: int = 50, offset: int = 0) -> dict:
 
 
 @mcp.tool()
+@_upstream_errors
 async def search_datasets(query: str, limit: int = 25) -> dict:
     """Search CSO Ireland datasets by keyword.
 
@@ -76,6 +97,7 @@ async def search_datasets(query: str, limit: int = 25) -> dict:
 
 
 @mcp.tool()
+@_upstream_errors
 async def get_dataset_metadata(matrix: str, language: str = DEFAULT_LANGUAGE) -> dict:
     """Get the structure of a dataset: its dimensions and categories.
 
@@ -121,6 +143,7 @@ async def get_dataset_metadata(matrix: str, language: str = DEFAULT_LANGUAGE) ->
 
 
 @mcp.tool()
+@_upstream_errors
 async def get_dataset(
     matrix: str, format: str = "csv", language: str = DEFAULT_LANGUAGE
 ) -> str:
@@ -149,19 +172,22 @@ async def get_dataset(
             matrix, fmt="JSON-stat", version="2.0", language=language
         )
         return resp.text
-    raise ValueError(f"Unsupported format {format!r}; use 'csv' or 'json-stat'.")
+    raise ToolError(f"Unsupported format {format!r}; use 'csv' or 'json-stat'.")
 
 
 def main() -> None:
     """Entry point. Defaults to stdio; set MCP_TRANSPORT=http for streamable HTTP.
 
-    HTTP bind address is controlled by MCP_HOST / MCP_PORT (see FastMCP
-    construction above).
+    HTTP bind address is controlled by MCP_HOST / MCP_PORT.
     """
     transport = os.environ.get("MCP_TRANSPORT", "stdio")
     try:
         if transport == "http":
-            mcp.run(transport="streamable-http")
+            mcp.run(
+                transport="streamable-http",
+                host=os.environ.get("MCP_HOST", "127.0.0.1"),
+                port=int(os.environ.get("MCP_PORT", "8000")),
+            )
         else:
             mcp.run()
     finally:

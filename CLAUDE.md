@@ -20,10 +20,10 @@ uv sync                      # install/sync dependencies from uv.lock
 ```
 
 The transport defaults to stdio; set `MCP_TRANSPORT=http` for streamable HTTP.
-Because the bundled `mcp.server.fastmcp.FastMCP` takes the bind address at
-construction (not in `run()`), `MCP_HOST`/`MCP_PORT` are read when the `FastMCP`
-instance is built in `main.py` (defaults `127.0.0.1` / `8000`); `run()` only
-selects the transport (`"streamable-http"`). The HTTP endpoint is `/mcp`.
+The server uses mcp 2.x (`mcp.server.mcpserver.MCPServer`, the renamed
+`FastMCP`), which takes the bind address in `run()`, so `MCP_HOST`/`MCP_PORT`
+are read in `main()` and passed to `run(transport="streamable-http", ...)`
+(defaults `127.0.0.1` / `8000`). The HTTP endpoint is `/mcp`.
 
 The `Dockerfile` (uv base image, deps cached in their own layer) is HTTP-only by
 design: it bakes in `MCP_TRANSPORT=http`, `MCP_HOST=0.0.0.0` (the code's
@@ -43,7 +43,7 @@ consumed by the MCP protocol.
 
 Two files, a clean split between transport and data access:
 
-- **`main.py`** — the MCP layer. Defines the `FastMCP("cso-ireland")` server and
+- **`main.py`** — the MCP layer. Defines the `MCPServer("cso-ireland")` server and
   the four `@mcp.tool()` functions (`list_datasets`, `search_datasets`,
   `get_dataset_metadata`, `get_dataset`). Tools only shape arguments/results and
   delegate to a single module-level `CSOClient`. Tool docstrings are the user-facing
