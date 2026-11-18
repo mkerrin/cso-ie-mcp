@@ -30,11 +30,10 @@ ENV PATH="/app/.venv/bin:$PATH"
 
 # HTTP transport defaults for the container. MCP_HOST must be 0.0.0.0 (not the
 # code's 127.0.0.1 default) or the port is unreachable from outside the
-# container. Logs go to a file by default; redirect to stderr for `docker logs`.
+# container.
 ENV MCP_TRANSPORT=http \
     MCP_HOST=0.0.0.0 \
-    MCP_PORT=8000 \
-    CSO_LOG_FILE=/dev/stderr
+    MCP_PORT=8000
 
 EXPOSE 8000
 

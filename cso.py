@@ -9,8 +9,6 @@ records. Everything else (metadata, data) is fetched on demand per matrix.
 
 from __future__ import annotations
 
-import logging
-import os
 import time
 from dataclasses import dataclass
 
@@ -21,42 +19,6 @@ DEFAULT_LANGUAGE = "en"
 
 # The full collection rarely changes within a session; cache it for a while.
 _COLLECTION_TTL_SECONDS = 6 * 60 * 60
-
-# Where per-request logs go. Override with CSO_LOG_FILE; the Docker image points
-# it at /dev/stderr so `docker logs` shows requests (stdout is the MCP wire).
-LOG_FILE = os.environ.get("CSO_LOG_FILE", "/tmp/cso.log")
-
-
-def _build_logger() -> logging.Logger:
-    """A logger that appends every CSO request/response to LOG_FILE."""
-    logger = logging.getLogger("cso")
-    logger.setLevel(logging.INFO)
-    # Avoid stacking duplicate handlers if the module is imported more than once.
-    if not any(
-        isinstance(h, logging.FileHandler)
-        and getattr(h, "baseFilename", None) == LOG_FILE
-        for h in logger.handlers
-    ):
-        handler = logging.FileHandler(LOG_FILE)
-        handler.setFormatter(
-            logging.Formatter("%(asctime)s %(levelname)s %(message)s")
-        )
-        logger.addHandler(handler)
-        logger.propagate = False
-    return logger
-
-
-log = _build_logger()
-
-
-async def _log_request(request: httpx.Request) -> None:
-    log.info("--> %s %s", request.method, request.url)
-
-
-async def _log_response(response: httpx.Response) -> None:
-    request = response.request
-    log.info("<-- %s %s %s", response.status_code, request.method, request.url)
-
 
 @dataclass(frozen=True)
 class DatasetRecord:
@@ -99,7 +61,6 @@ class CSOClient:
             timeout=timeout,
             headers={"Accept": "application/json"},
             follow_redirects=True,
-            event_hooks={"request": [_log_request], "response": [_log_response]},
         )
         self._collection: list[DatasetRecord] | None = None
         self._collection_fetched_at: float = 0.0

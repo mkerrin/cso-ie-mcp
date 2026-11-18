@@ -50,8 +50,7 @@ docker compose up --build    # builds the image, serves HTTP at :8001/mcp
 
 Compose maps host port **8001** → container 8000 so this can run alongside the
 `data-gov-ie` server (which uses 8000). The image is HTTP-only: it sets
-`MCP_HOST=0.0.0.0` so the port is reachable from outside the container and sends
-request logs to stderr (`CSO_LOG_FILE=/dev/stderr`) so `docker logs` shows them.
+`MCP_HOST=0.0.0.0` so the port is reachable from outside the container.
 
 ## Register with an MCP client
 

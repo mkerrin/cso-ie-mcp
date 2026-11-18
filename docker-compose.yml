@@ -13,5 +13,4 @@ services:
       MCP_TRANSPORT: http
       MCP_HOST: 0.0.0.0
       MCP_PORT: "8000"
-      CSO_LOG_FILE: /dev/stderr
     restart: unless-stopped

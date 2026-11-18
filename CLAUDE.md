@@ -27,17 +27,12 @@ are read in `main()` and passed to `run(transport="streamable-http", ...)`
 
 The `Dockerfile` (uv base image, deps cached in their own layer) is HTTP-only by
 design: it bakes in `MCP_TRANSPORT=http`, `MCP_HOST=0.0.0.0` (the code's
-`127.0.0.1` default would make the container unreachable), and points
-`CSO_LOG_FILE` at `/dev/stderr` so `docker logs` shows requests. The `HEALTHCHECK`
+`127.0.0.1` default would make the container unreachable). The `HEALTHCHECK`
 is a TCP connect to the port — a GET on `/mcp` returns 406 (it wants POST), so a
 status-code check would mislead. `docker-compose.yml` wraps it for
 `docker compose up --build`.
 
 There is currently no test suite, linter config, or build step. Python >=3.12.
-
-Per-request logging (every CSO HTTP request/response) is appended to `/tmp/cso.log`
-(override with `CSO_LOG_FILE`) — tail it to debug API interactions, since stdio is
-consumed by the MCP protocol.
 
 ## Architecture
 
