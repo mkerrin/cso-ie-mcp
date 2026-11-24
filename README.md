@@ -29,13 +29,24 @@ A typical flow: `search_datasets("population county")` → pick a `matrix` code 
 - Datasets can be large — check `get_dataset_metadata` (the product of the
   dimension sizes is the number of data cells) before calling `get_dataset`.
 
+## Install
+
+```sh
+uv tool install git+https://github.com/mkerrin/cso-ie-mcp
+```
+
+This puts a `cso-ie-mcp` command on your `PATH` (`uv tool upgrade cso-ie-mcp` to
+update). Or run it without installing:
+`uvx --from git+https://github.com/mkerrin/cso-ie-mcp cso-ie-mcp`.
+
 ## Run
 
 ```sh
-uv run python main.py        # serves over stdio (default)
+cso-ie-mcp                   # installed tool, serves over stdio (default)
+uv run cso-ie-mcp            # from a checkout (`uv run python main.py` also works)
 
 # serve over streamable HTTP at http://127.0.0.1:8000/mcp
-MCP_TRANSPORT=http MCP_PORT=8000 uv run python main.py
+MCP_TRANSPORT=http MCP_PORT=8000 uv run cso-ie-mcp
 ```
 
 The transport is chosen by `MCP_TRANSPORT` (`stdio` by default, or `http`).
@@ -54,10 +65,16 @@ Compose maps host port **8001** → container 8000 so this can run alongside the
 
 ## Register with an MCP client
 
-Claude Code:
+Claude Code, with the tool installed:
 
 ```sh
-claude mcp add cso-ireland -- uv --directory /home/michael/src/opendatamcp/cso-mcp-py run python main.py
+claude mcp add cso-ireland -- cso-ie-mcp
+```
+
+or from a checkout:
+
+```sh
+claude mcp add cso-ireland -- uv --directory /path/to/cso-ie-mcp run cso-ie-mcp
 ```
 
 Or in a `mcpServers` config block (e.g. Claude Desktop's
@@ -67,14 +84,8 @@ Or in a `mcpServers` config block (e.g. Claude Desktop's
 {
   "mcpServers": {
     "cso-ireland": {
-      "command": "uv",
-      "args": [
-        "--directory",
-        "/home/michael/src/opendatamcp/cso-mcp-py",
-        "run",
-        "python",
-        "main.py"
-      ]
+      "command": "cso-ie-mcp",
+      "args": []
     }
   }
 }

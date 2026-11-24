@@ -13,11 +13,18 @@ live API at `https://ws.cso.ie/public/api.restful`.
 ## Commands
 
 ```sh
-uv run python main.py        # run the MCP server (serves over stdio)
-MCP_TRANSPORT=http MCP_PORT=8000 uv run python main.py   # serve over streamable HTTP (:8000/mcp)
+uv run cso-ie-mcp            # run the MCP server (serves over stdio); `uv run python main.py` is a shim for the same
+MCP_TRANSPORT=http MCP_PORT=8000 uv run cso-ie-mcp   # serve over streamable HTTP (:8000/mcp)
 docker compose up --build    # build + run the HTTP server in a container (:8000/mcp)
 uv sync                      # install/sync dependencies from uv.lock
+uv tool install git+https://github.com/mkerrin/cso-ie-mcp   # install the `cso-ie-mcp` command
 ```
+
+The code is a `src/` layout package (`src/cso_ie_mcp/`) built with hatchling, so
+`uv tool install` / `uvx` work; the console script is `cso_ie_mcp.server:main`.
+Keep it a package: top-level modules like `main`/`cso` would be installed straight
+into site-packages, and with no `[build-system]` uv falls back to setuptools, which
+rejects the flat multi-module layout.
 
 The transport defaults to stdio; set `MCP_TRANSPORT=http` for streamable HTTP.
 The server uses mcp 2.x (`mcp.server.mcpserver.MCPServer`, the renamed
@@ -36,9 +43,9 @@ There is currently no test suite, linter config, or build step. Python >=3.12.
 
 ## Architecture
 
-Two files, a clean split between transport and data access:
+Two modules in `src/cso_ie_mcp/`, a clean split between transport and data access:
 
-- **`main.py`** — the MCP layer. Defines the `MCPServer("cso-ireland")` server and
+- **`server.py`** — the MCP layer. Defines the `MCPServer("cso-ireland")` server and
   the four `@mcp.tool()` functions (`list_datasets`, `search_datasets`,
   `get_dataset_metadata`, `get_dataset`). Tools only shape arguments/results and
   delegate to a single module-level `CSOClient`. Tool docstrings are the user-facing

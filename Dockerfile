@@ -20,12 +20,12 @@ RUN --mount=type=cache,target=/root/.cache/uv \
     --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
     uv sync --frozen --no-install-project --no-dev
 
-# 2) Add the project source and sync once more against the lockfile.
+# 2) Add the project source and install the package itself.
 COPY . /app
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --frozen --no-dev
 
-# Put the project venv first on PATH so `python` resolves to the venv.
+# Put the project venv first on PATH so the console script runs directly.
 ENV PATH="/app/.venv/bin:$PATH"
 
 # HTTP transport defaults for the container. MCP_HOST must be 0.0.0.0 (not the
@@ -43,4 +43,4 @@ EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
     CMD ["python", "-c", "import os,socket; socket.create_connection(('127.0.0.1', int(os.environ.get('MCP_PORT','8000'))), timeout=4).close()"]
 
-CMD ["python", "main.py"]
+CMD ["cso-ie-mcp"]
